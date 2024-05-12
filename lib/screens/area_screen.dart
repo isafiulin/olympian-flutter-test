@@ -7,6 +7,7 @@ import '../utils/physics.dart';
 import '../viewmodels/game_viewmodel.dart';
 import '../widgets/base_scaffold.dart';
 import '../widgets/score_bar.dart';
+import '../models/word_model.dart';
 import '../widgets/word_item.dart';
 import '../widgets/help_button.dart';
 import '../services/notification_service.dart';
@@ -36,7 +37,9 @@ class AreaScreen extends StatelessWidget {
                   ? 'Открыть выбранное слово. Нельзя открыть последнее слово'
                   : 'Открыть выбранное слово. Выберете ячейку',
             ),
-            const SizedBox(height: 66,),
+            const SizedBox(
+              height: 66,
+            ),
           ],
         ),
         appBar: AppBar(
@@ -126,48 +129,58 @@ class __NestedScrollState extends State<_NestedScroll> {
                         minHeight: MediaQuery.of(context).size.height - 70,
                       ),
                       child: Column(
+                        verticalDirection: VerticalDirection.up,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          ...group.map((word) {
-                            final key =
-                                word == vm.scrollableWord ? dataKey : null;
-                            if (key != null) {
-                              vm.scrollKey = key;
-                            }
-                            final showEndLeaf =
-                                (widthOffset / wordWidth).floor() <= index;
-                            final showStartLeaf =
-                                (widthOffset / wordWidth).floor() == index;
-                            return AnimatedBuilder(
-                              animation: _scrollCtrl,
-                              builder: (context, child) {
-                                final page =
-                                    max((widthOffset / wordWidth).floor(), 0);
-                                final position = _recalculateOffset(
-                                  maxItems: groups[page].length,
-                                  depth: word.depth,
-                                );
+                          Container(
+                            height: itemHeight,
+                          ),
+                          ...group
+                              .map((word) {
+                                final key =
+                                    word == vm.scrollableWord ? dataKey : null;
+                                if (key != null) {
+                                  vm.scrollKey = key;
+                                }
+                                final showEndLeaf =
+                                    (widthOffset / wordWidth).floor() <= index;
+                                final showStartLeaf =
+                                    (widthOffset / wordWidth).floor() == index;
+                                return AnimatedBuilder(
+                                  animation: _scrollCtrl,
+                                  builder: (context, child) {
+                                    final page = max(
+                                        (widthOffset / wordWidth).floor(), 0);
+                                    final position = _recalculateOffset(
+                                      maxItems: groups[page].length,
+                                      depth: word.depth,
+                                    );
 
-                                return AnimatedContainer(
-                                  width: wordWidth,
-                                  height: itemHeight,
-                                  duration: const Duration(milliseconds: 150),
-                                  margin: EdgeInsets.only(
-                                    right: 0,
-                                    top: position,
-                                    bottom: position,
+                                    return AnimatedContainer(
+                                      width: wordWidth,
+                                      height: itemHeight,
+                                      duration:
+                                          const Duration(milliseconds: 150),
+                                      margin: EdgeInsets.only(
+                                        right: 0,
+                                        top: position,
+                                        bottom: position,
+                                      ),
+                                      child: child,
+                                    );
+                                  },
+                                  child: WordItem(
+                                    key: key,
+                                    word: word,
+                                    showEndLeaf: showEndLeaf,
+                                    showStartLeaf: showStartLeaf,
+                                    showHandHint: showHandHintItem(
+                                        group, word, groups, 0),
                                   ),
-                                  child: child,
                                 );
-                              },
-                              child: WordItem(
-                                key: key,
-                                word: word,
-                                showEndLeaf: showEndLeaf,
-                                showStartLeaf: showStartLeaf,
-                              ),
-                            );
-                          }).toList(),
+                              })
+                              .toList()
+                              .reversed,
                           Container(
                             height: 66,
                           ),
@@ -219,6 +232,13 @@ class __NestedScrollState extends State<_NestedScroll> {
         ],
       ),
     );
+  }
+
+  bool showHandHintItem(List<WordModel> group, WordModel word,
+      List<List<WordModel>> groups, int index) {
+    return group.indexOf(word) == index &&
+        groups.indexOf(group) == index &&
+        word.showHandHint;
   }
 
   double _recalculateOffset({required int maxItems, required int depth}) {

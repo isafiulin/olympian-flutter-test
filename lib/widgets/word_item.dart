@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import '../viewmodels/game_viewmodel.dart';
 import 'package:provider/provider.dart';
 
@@ -7,7 +8,6 @@ import 'image_dialog.dart';
 import 'shake.dart';
 import '../utils/ext.dart';
 import '../models/word_model.dart';
-import 'wrong_answer_dialog.dart';
 
 // ignore: constant_identifier_names
 const ANIMATION_DURATION = 100;
@@ -16,12 +16,14 @@ class WordItem extends StatefulWidget {
   final WordModel word;
   final bool showStartLeaf;
   final bool showEndLeaf;
+  final bool showHandHint;
 
   const WordItem({
     Key? key,
     required this.word,
     this.showStartLeaf = false,
     this.showEndLeaf = true,
+    this.showHandHint = false,
   }) : super(key: key);
 
   @override
@@ -41,9 +43,9 @@ class _WordItemState extends State<WordItem> {
 
     _wordFocusNode.addListener(() {
       context.read<GameViewModel>().wordFocus(
-        word: widget.word,
-        focus: _wordFocusNode.hasFocus,
-      );
+            word: widget.word,
+            focus: _wordFocusNode.hasFocus,
+          );
 
       if (!_wordFocusNode.hasFocus) {
         context.read<GameViewModel>().clearActiveWord();
@@ -66,15 +68,16 @@ class _WordItemState extends State<WordItem> {
           onShow: () {
             _wordFocusNode.unfocus();
             _textController.clear();
-          }
-      );
+          });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final showInput = [WordState.idle, WordState.incorrect, WordState.input].contains(widget.word.state);
-    final showImageInput = widget.word.image != '' || widget.word.description != '';
+    final showInput = [WordState.idle, WordState.incorrect, WordState.input]
+        .contains(widget.word.state);
+    final showImageInput =
+        widget.word.image != '' || widget.word.description != '';
 
     if (!_wordFocusNode.hasFocus && _textController.value.text != '') {
       _textController.clear();
@@ -95,6 +98,7 @@ class _WordItemState extends State<WordItem> {
               width: 160,
               height: 66,
             ),
+            _buildHandHint(),
             if (widget.word.state == WordState.correct)
               Positioned(
                 top: 0,
@@ -217,6 +221,26 @@ class _WordItemState extends State<WordItem> {
     }
 
     return items;
+  }
+
+  Widget _buildHandHint() {
+    if (widget.showHandHint && widget.word.state != WordState.correct ) {
+      const String assetName = 'assets/lottie/hand_animations.json';
+      return Positioned(
+          height: 100,
+          width: 100,
+          left: 49,
+          top: 5,
+          child: IgnorePointer(
+            ignoring: true,
+            child: Lottie.asset(
+              assetName,
+              width: 120,
+              alignment: Alignment.center,
+            ),
+          ));
+    }
+    return Container();
   }
 
   _buildLeaf() {
